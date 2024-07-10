@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Bootstrap Example</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+        <script src="https://login2explore.com/jpdb/resources/js/0.0.3/jpdb-commons.js"></script>
+    </head>
+    <body>
+        <div class="container">
+            <h2>Vertical (basic) form</h2>
+            <form id="empForm" method="post" action="http://localhost:5577/api/iml">
+                <div class="form-group">
+                    <span><label for="empId">Roll-No:</label> <label id="empIdMsg"></label></span>
+                    <input type="number" class="form-control" name="empId" id="empId" placeholder="Roll-No" required onChange="getStu()">
+                </div>
+                <div class="form-group">
+                    <label for="empName">Full-name:</label>
+                    <input type="text" class="form-control" id="empName" placeholder="Full-name" name="empName">
+                </div>
+                <div class="form-group">
+                    <label for="empClass">Class:</label>
+                    <input type="number" class="form-control" id="empClass" placeholder="Class" name="empClass">
+                </div>
+                <div class="form-group">
+                    <label for="empDate">DOB:</label>
+                    <input type="date" class="form-control" id="empDate" placeholder="DOB" name="empDate">
+                </div>
+                <div class="form-group">
+                    <label for="empAdd">Address:</label>
+                    <input type="text" class="form-control" id="empAdd" placeholder="Address" name="empAdd">
+                </div>
+                <div class="form-group">
+                    <label for="empEnr">Enrollment-Date:</label>
+                    <input type="date" class="form-control" id="empEnr" placeholder="Enrollment-Date" name="empEnr">
+                </div>
+
+                <div class="form-group text-center">
+                    <input type="button" class="btn btn-primary" id="empSave" value="Save" onclick="saveData();" disabled>
+                    <input type="button" class="btn btn-primary" id="change" value="Update" onclick="changeData();" disabled>
+                    <input type="button" class="btn btn-primary" id="reset" value="Reset" onclick="resetForm();">
+                </div>
+            </form>
+        </div>
+        <script>
+            var jpdbBaseURL = "http://api.login2explore.com:5577";
+            var jpdbIRL = "/api/irl";
+            var jpdbIML = "/api/iml";
+            var dbName = "SCHOOL-DB";
+            var relName = "STUDENT-TABLE";
+            var connToken = "90931712|-31949214543971514|90963653";
+
+            function validateAndGetFormData() {
+                var empIdVar = $("#empId").val();
+                if (empIdVar === "") {
+                    alert("Roll No is a Required Value");
+                    $("#empId").focus();
+                    return "";
+                }
+                var empNameVar = $("#empName").val();
+                if (empNameVar === "") {
+                    alert("Full-name is a Required Value");
+                    $("#empName").focus();
+                    return "";
+                }
+                var empClassVar = $("#empClass").val();
+                if (empClassVar === "") {
+                    alert("Class is a Required Value");
+                    $("#empClass").focus();
+                    return "";
+                }
+                var empDateVar = $("#empDate").val();
+                if (empDateVar === "") {
+                    alert("DOB is a Required Value");
+                    $("#empDate").focus();
+                    return "";
+                }
+                var empAddVar = $("#empAdd").val();
+                if (empAddVar === "") {
+                    alert("Address is a Required Value");
+                    $("#empAdd").focus();
+                    return "";
+                }
+                var empEnrVar = $("#empEnr").val();
+                if (empEnrVar === "") {
+                    alert("Enrollment date is a Required Value");
+                    $("#empEnr").focus();
+                    return "";
+                }
+                var jsonStrObj = {
+                    empId: empIdVar,
+                    empName: empNameVar,
+                    empClass: empClassVar,
+                    empDate: empDateVar,
+                    empAdd: empAddVar,
+                    empEnr: empEnrVar
+                };
+                return JSON.stringify(jsonStrObj);
+            }
+
+            function resetForm() {
+                $("#empId").val("");
+                $("#empName").val("");
+                $("#empClass").val("");
+                $("#empDate").val("");
+                $("#empAdd").val("");
+                $("#empEnr").val("");
+                $("#empId").prop("disabled", false);
+                $("#empSave").prop("disabled", true);
+                $("#change").prop("disabled", true);
+                $("#empId").focus();
+            }
+
+            function saveData() {
+                var jsonStr = validateAndGetFormData();
+                if (jsonStr === "") {
+                    return;
+                }
+                var putReqStr = createPUTRequest(connToken, jsonStr, dbName, relName);
+                jQuery.ajaxSetup({async: false});
+                var resultObj = executeCommandAtGivenBaseUrl(putReqStr, jpdbBaseURL, jpdbIML);
+                alert(JSON.stringify(resultObj));
+                jQuery.ajaxSetup({async: true});
+                $("#empId").focus();
+
+                resetForm();
+            }
+            function changeData() {
+                var jsonStr = validateAndGetFormData();
+                if (jsonStr === "") {
+                    return;
+                }
+                var updateReqStr = createUPDATERecordRequest(connToken, jsonStr, dbName, relName, "empId");
+                console.log("Update Request String:", updateReqStr);
+
+                // Perform asynchronous request
+                $.ajax({
+                    url: jpdbBaseURL + jpdbIML,
+                    type: 'POST',
+                    data: updateReqStr,
+                    contentType: 'application/json',
+                    success: function (resultObj) {
+                        console.log("Update Result:", resultObj);
+                        alert(JSON.stringify(resultObj));
+                        resetForm();
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Update Error:", error);
+                        alert("Error: " + error);
+                    }
+                });
+            }
+
+
+
+            function getStu() {
+                var empIdVar = $("#empId").val();
+                if (empIdVar === "") {
+                    alert("Roll No is a Required Value");
+                    $("#empId").focus();
+                    return "";
+                }
+                var jsonObj = {
+                    empId: empIdVar
+                };
+                var getReqStr = createGET_BY_KEYRequest(connToken, dbName, relName, JSON.stringify(jsonObj));
+                jQuery.ajaxSetup({async: false});
+                var resultObj = executeCommandAtGivenBaseUrl(getReqStr, jpdbBaseURL, jpdbIRL);
+                jQuery.ajaxSetup({async: true});
+                if (resultObj.status === 400) {
+                    $("#empSave").prop("disabled", false);
+                    $("#change").prop("disabled", true);
+                } else {
+                    var data = JSON.parse(resultObj.data).record;
+                    $("#empId").prop("disabled", true);
+                    $("#empName").val(data.empName);
+                    $("#empClass").val(data.empClass);
+                    $("#empDate").val(data.empDate);
+                    $("#empAdd").val(data.empAdd);
+                    $("#empEnr").val(data.empEnr);
+                    $("#empSave").prop("disabled", true);
+                    $("#change").prop("disabled", false);
+                }
+            }
+        </script>
+    </body>
+</html>
